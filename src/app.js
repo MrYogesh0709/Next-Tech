@@ -14,6 +14,7 @@ import { generalLimiterMiddleware } from './api/middleware/ratelimit.middleware.
 //routes
 import authRouter from './api/routes/auth.routes.js';
 import userRouter from './api/routes/user.routes.js';
+import { errorLogger, expressLogger } from './utils/logger.util.js';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser(env.COOKIE_SECRET));
+app.use(expressLogger);
 app.use(generalLimiterMiddleware);
 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
@@ -29,6 +31,7 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1', userRouter);
 
 app.use(notFound);
+app.use(errorLogger);
 app.use(errorHandler);
 
 export default app;

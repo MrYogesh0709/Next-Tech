@@ -2,11 +2,13 @@ import { AuthService } from '../../services/AuthService.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { constants, isDevelopment } from '../../utils/constant.js';
 import { ApiResponse } from '../../utils/ApiResponse.js';
+import { logger } from '../../utils/logger.util.js';
 
 export class AuthController {
   constructor() {
     this.authService = new AuthService();
   }
+
   setTokenCookie(res, tokenName, tokenValue, expiresIn) {
     res.cookie(tokenName, tokenValue, {
       httpOnly: true,
@@ -21,10 +23,13 @@ export class AuthController {
   register = asyncHandler(async (req, res) => {
     const data = req.body;
     const { user, refreshToken, accessToken } = await this.authService.register(data);
+
     this.setTokenCookie(res, 'accessToken', accessToken, constants.jwt.expiresIn);
     this.setTokenCookie(res, 'refreshToken', refreshToken, constants.jwt.refreshExpiresIn);
 
-    res.status(201).json(new ApiResponse(201, user, 'User register successfully'));
+    logger.info('User registered successfully', { userId: user.id });
+
+    res.status(201).json(new ApiResponse(201, user, 'User registered successfully'));
   });
 
   login = asyncHandler(async (req, res) => {
@@ -33,7 +38,9 @@ export class AuthController {
     this.setTokenCookie(res, 'accessToken', accessToken, constants.jwt.expiresIn);
     this.setTokenCookie(res, 'refreshToken', refreshToken, constants.jwt.refreshExpiresIn);
 
-    res.status(200).json(new ApiResponse(200, { profiles, user }, 'User logged In'));
+    logger.info('User logged in', { userId: user.id });
+
+    res.status(200).json(new ApiResponse(200, { profiles, user }, 'User logged in'));
   });
 
   refresh = asyncHandler(async (req, res) => {
@@ -42,7 +49,10 @@ export class AuthController {
 
     this.setTokenCookie(res, 'accessToken', accessToken, constants.jwt.expiresIn);
     this.setTokenCookie(res, 'refreshToken', refreshToken, constants.jwt.refreshExpiresIn);
-    res.status(200).json(new ApiResponse(200, {}, 'Token Refresh success'));
+
+    logger.info('Token refreshed');
+
+    res.status(200).json(new ApiResponse(200, {}, 'Token refresh success'));
   });
 
   logout = asyncHandler(async (req, res) => {
@@ -50,6 +60,8 @@ export class AuthController {
     await this.authService.logout(id);
     res.clearCookie('accessToken', { httpOnly: true, secure: !isDevelopment, sameSite: 'strict' });
     res.clearCookie('refreshToken', { httpOnly: true, secure: !isDevelopment, sameSite: 'strict' });
+
+    logger.info('User logged out', { userId: id });
 
     res.status(200).json(new ApiResponse(200, {}, 'Logged out successfully'));
   });
@@ -60,12 +72,16 @@ export class AuthController {
     res.clearCookie('accessToken', { httpOnly: true, secure: !isDevelopment, sameSite: 'strict' });
     res.clearCookie('refreshToken', { httpOnly: true, secure: !isDevelopment, sameSite: 'strict' });
 
-    res.status(200).json(new ApiResponse(200, {}, 'User Deleted'));
+    logger.info('User deleted', { userId: id });
+
+    res.status(200).json(new ApiResponse(200, {}, 'User deleted'));
   });
 
   changePassword = asyncHandler(async (req, res) => {
-    const userId = req.user.userId; // Authenticated user's ID
+    const userId = req.user.userId;
     await this.authService.changePassword(userId, req.body);
+
+    logger.info('Password changed', { userId });
 
     res.status(200).json(new ApiResponse(200, {}, 'Password changed successfully'));
   });
@@ -73,6 +89,8 @@ export class AuthController {
   updateUser = asyncHandler(async (req, res) => {
     const userId = req.user.userId;
     const updatedUser = await this.authService.updateUser(userId, req.body);
+
+    logger.info('User updated', { userId });
 
     res.status(200).json(new ApiResponse(200, updatedUser, 'User updated successfully'));
   });

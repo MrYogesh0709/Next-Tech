@@ -1,5 +1,6 @@
 import { authRateLimiter, generalRateLimiter } from '../../config/redis.config.js';
 import { RateLimiterRes } from 'rate-limiter-flexible';
+import { logger } from '../../utils/logger.util.js';
 
 const setRateLimitHeaders = (res, rateLimiterRes, points) => {
   res.setHeader('RateLimit-Limit', points);
@@ -22,10 +23,19 @@ export const authLimiterMiddleware = async (req, res, next) => {
 
     setRateLimitHeaders(res, rateLimiterRes, authRateLimiter.points);
 
+    logger.info('Auth rate limit check passed', { ip: ipAddress, path: req.originalUrl });
+
     next();
   } catch (error) {
     if (error instanceof RateLimiterRes) {
       setRateLimitHeaders(res, error, authRateLimiter.points);
+
+      logger.warn('Auth rate limit exceeded', {
+        ip: req.ip,
+        path: req.originalUrl,
+        remainingPoints: error.remainingPoints,
+        retryAfter: Math.ceil(error.msBeforeNext / 1000),
+      });
 
       return res.status(429).json({
         status: 429,
@@ -34,6 +44,7 @@ export const authLimiterMiddleware = async (req, res, next) => {
         retryAfter: Math.ceil(error.msBeforeNext / 1000),
       });
     } else {
+      logger.error('Unexpected error in auth rate limiter', { error: error.message, ip: req.ip });
       next(error);
     }
   }
@@ -50,10 +61,19 @@ export const generalLimiterMiddleware = async (req, res, next) => {
 
     setRateLimitHeaders(res, rateLimiterRes, generalRateLimiter.points);
 
+    logger.info('General rate limit check passed', { ip: ipAddress, path: req.originalUrl });
+
     next();
   } catch (error) {
     if (error instanceof RateLimiterRes) {
       setRateLimitHeaders(res, error, generalRateLimiter.points);
+
+      logger.warn('General rate limit exceeded', {
+        ip: req.ip,
+        path: req.originalUrl,
+        remainingPoints: error.remainingPoints,
+        retryAfter: Math.ceil(error.msBeforeNext / 1000),
+      });
 
       res.status(429).json({
         status: 429,
@@ -63,6 +83,7 @@ export const generalLimiterMiddleware = async (req, res, next) => {
       });
       return;
     } else {
+      logger.error('Unexpected error in general rate limiter', { error: error.message, ip: req.ip });
       next(error);
     }
   }

@@ -7,10 +7,10 @@ import { validateImageUpload } from '../middleware/validate.middleware.js';
 const router = Router();
 const userController = new UserController();
 
-// Upload an image
+// Upload an image use image in postman via upload file
 router.post('/upload-image', authMiddleware, upload.single('image'), validateImageUpload, userController.uploadImage);
 
-// Delete an image
+// Delete an image use name of image =>get name by login or get images route
 router.delete('/delete-image/:imageName', authMiddleware, userController.deleteImage);
 
 // Get user images
