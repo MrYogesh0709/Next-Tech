@@ -9,6 +9,16 @@
     "test": "jest"
   },
   "keywords": [],
+  "lint-staged": {
+    "src/**/*.js": [
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
   "author": "",
   "description": "",
   "dependencies": {
