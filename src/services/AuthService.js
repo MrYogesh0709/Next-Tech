@@ -65,7 +65,11 @@ export class AuthService {
 
     logger.info(`User logged in: ${user.email}`);
 
-    return { accessToken, refreshToken, user: { id: user._id, email: user.email, images: user.imageUrl } };
+    return {
+      accessToken,
+      refreshToken,
+      user: { id: user._id, email: user.email, images: user.imageUrl, phone: user.phone },
+    };
   }
 
   async refreshToken(token) {

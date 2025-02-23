@@ -25,9 +25,12 @@ app.use(cookieParser(env.COOKIE_SECRET));
 app.use(expressLogger);
 app.use(generalLimiterMiddleware);
 
+//to serve files
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+//auth routes
 app.use('/api/v1/auth', authRouter);
+//image routes
 app.use('/api/v1', userRouter);
 
 app.use(notFound);
